@@ -1,0 +1,68 @@
+body.point-overlay {
+  background-color: transparent !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  color: #3b82f6;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.point-list {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.point-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.point-item input {
+  width: 60px;
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.add-point-btn {
+  background-color: #10b981;
+  margin-bottom: 1rem;
+}
+.add-point-btn:hover {
+  background-color: #059669;
+}
+
+.hide-btn {
+  background-color: #64748b;
+  margin-bottom: 1rem;
+}
+.hide-btn:hover {
+  background-color: #475569;
+}

@@ -12,10 +12,12 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Auto Clicker",
         "width": 400,
         "height": 450,
-        "resizable": false
+        "resizable": false,
+        "alwaysOnTop": true
       }
     ],
     "security": {
