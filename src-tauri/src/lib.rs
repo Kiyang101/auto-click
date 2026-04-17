@@ -18,6 +18,7 @@ struct AppState {
 
 #[derive(serde::Deserialize, Debug, Clone)]
 struct PointConfig {
+    #[allow(dead_code)]
     id: String,
     x: i32,
     y: i32,
@@ -48,10 +49,17 @@ fn start_clicking(state: State<'_, AppState>, interval_ms: u64) -> Result<(), St
             }
             #[cfg(not(target_os = "macos"))]
             {
-                use enigo::{Button, Direction, Enigo, Mouse, Settings};
+                use enigo::{Button, Coordinate, Direction, Enigo, Mouse, Settings};
                 let mut enigo = Enigo::new(&Settings::default()).unwrap();
-                let _lock = click_lock.lock().unwrap();
-                let _ = enigo.button(Button::Left, Direction::Click);
+                if let Ok(current_pos) = enigo.location() {
+                    let _lock = click_lock.lock().unwrap();
+                    let _ = enigo.button(Button::Left, Direction::Press);
+                    let _ = enigo.button(Button::Left, Direction::Release);
+                    let _ = enigo.move_mouse(current_pos.0, current_pos.1, Coordinate::Abs);
+                } else {
+                    let _lock = click_lock.lock().unwrap();
+                    let _ = enigo.button(Button::Left, Direction::Click);
+                }
             }
             std::thread::sleep(Duration::from_millis(interval_ms));
         }
@@ -89,7 +97,6 @@ fn post_click_at(x: f64, y: f64) {
         if let (Ok(down), Ok(up)) = (down_event, up_event) {
             // Post the click at the target
             down.post(CGEventTapLocation::HID);
-            std::thread::sleep(Duration::from_millis(15)); // Delay for apps to register
             up.post(CGEventTapLocation::HID);
 
             // Instantly and SILENTLY restore the cursor to where the user had it.
@@ -107,8 +114,23 @@ fn post_click_at(x: f64, y: f64) {
     // Fallback for non-macOS (still warps for now, but avoids compile error)
     use enigo::{Button, Coordinate, Direction, Enigo, Mouse, Settings};
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
-    let _ = enigo.move_mouse(x as i32, y as i32, Coordinate::Abs);
-    let _ = enigo.button(Button::Left, Direction::Click);
+    
+    // Save current position
+    if let Ok(current_pos) = enigo.location() {
+        // Move to target
+        let _ = enigo.move_mouse(x as i32, y as i32, Coordinate::Abs);
+        
+        // Click
+        let _ = enigo.button(Button::Left, Direction::Press);
+        let _ = enigo.button(Button::Left, Direction::Release);
+        
+        // Restore position
+        let _ = enigo.move_mouse(current_pos.0, current_pos.1, Coordinate::Abs);
+    } else {
+        // Fallback if we can't get current position
+        let _ = enigo.move_mouse(x as i32, y as i32, Coordinate::Abs);
+        let _ = enigo.button(Button::Left, Direction::Click);
+    }
 }
 
 #[tauri::command]

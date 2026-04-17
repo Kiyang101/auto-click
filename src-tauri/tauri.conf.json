@@ -15,7 +15,7 @@
         "label": "main",
         "title": "Auto Clicker",
         "width": 400,
-        "height": 450,
+        "height": 480,
         "resizable": false,
         "alwaysOnTop": true
       }

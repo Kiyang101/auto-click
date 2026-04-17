@@ -1,68 +1,104 @@
-body.point-overlay {
-  background-color: transparent !important;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-.tabs {
-  display: flex;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.tab {
-  flex: 1;
-  padding: 0.5rem;
-  text-align: center;
-  cursor: pointer;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.tab.active {
-  color: #3b82f6;
-  border-bottom: 2px solid #3b82f6;
-}
-
 .point-list {
-  max-height: 150px;
+  max-height: 200px;
   overflow-y: auto;
-  margin-bottom: 1rem;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0.25rem;
 }
 
 .point-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.25rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  padding: 1rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.point-item input {
-  width: 60px;
-  padding: 0.25rem;
-  margin-left: 0.5rem;
+.point-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-blue);
+  transform: translateX(4px);
+}
+
+.point-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.point-item-header span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-blue);
+}
+
+.delete-btn {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--accent-rose);
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background: var(--accent-rose);
+  color: white;
 }
 
 .add-point-btn {
-  background-color: #10b981;
-  margin-bottom: 1rem;
-}
-.add-point-btn:hover {
-  background-color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-emerald);
+  border: 1px dashed var(--accent-emerald-glow);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  width: 100%;
 }
 
-.hide-btn {
-  background-color: #64748b;
-  margin-bottom: 1rem;
+.add-point-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-style: solid;
 }
-.hide-btn:hover {
-  background-color: #475569;
+
+.secondary-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 0.6rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
 }
