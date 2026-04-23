@@ -31,7 +31,7 @@ A high-performance, cross-platform auto-clicker built with **Tauri**, **React**,
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/auto-click.git
+   git clone https://github.com/Kiyang101/auto-click.git
    cd auto-click
    ```
 
