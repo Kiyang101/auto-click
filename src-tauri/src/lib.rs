@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::State;
+use tauri::{Manager, State};
 
 #[cfg(target_os = "macos")]
 use core_graphics::event::{CGEvent, CGEventTapLocation, CGMouseButton, CGEventType};
@@ -185,6 +185,14 @@ pub fn run() {
             is_clicking: Arc::new(AtomicBool::new(false)),
             multi_clicking: Arc::new(AtomicBool::new(false)),
             click_lock: Arc::new(Mutex::new(())),
+        })
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { .. } => {
+                if window.label() == "main" {
+                    window.app_handle().exit(0);
+                }
+            }
+            _ => {}
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![

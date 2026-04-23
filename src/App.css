@@ -18,7 +18,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--font-family);
-  background-color: var(--bg-color);
+  /* background-color: var(--bg-color); */
   color: var(--text-primary);
   overflow: hidden;
   user-select: none;
@@ -32,8 +32,10 @@ body {
   min-height: 100vh;
   padding: 1rem;
   box-sizing: border-box;
-  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent),
-              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent);
+  background-color: var(--bg-color);
+
+  /* background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent),
+              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent); */
 }
 
 .card {
@@ -123,11 +125,11 @@ h1 {
 }
 
 .time-field input {
-  width: 100%;
+  width: 80%;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--card-border);
   color: var(--text-primary);
-  padding: 0.5rem;
+  padding: 0.4rem;
   border-radius: 0.5rem;
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
@@ -139,6 +141,12 @@ h1 {
 .time-field input:focus {
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 2px var(--accent-blue-glow);
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .time-field label {
