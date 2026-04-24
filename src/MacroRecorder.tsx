@@ -12,19 +12,27 @@
  * menu bar).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { MacroAction } from "./types/macro";
 
 export function MacroRecorder() {
   const [count, setCount] = useState(0);
+  // Cached DPI scale factor — fetched once on mount.
+  // macOS Core Graphics uses logical points so no scaling needed there;
+  // Windows/Linux enigo.move_mouse expects physical pixels.
+  const scaleRef = useRef(1);
+  const isMac = navigator.userAgent.includes("Mac");
 
   useEffect(() => {
-    // Make the page itself transparent / no background
+    // Reinforce transparent background (belt-and-suspenders alongside main.tsx).
     document.documentElement.style.background = "transparent";
-    document.body.style.background = "transparent";
-    document.body.style.margin = "0";
+    document.body.style.cssText = "margin:0;background:transparent;";
+
+    getCurrentWebviewWindow()
+      .scaleFactor()
+      .then((sf) => { scaleRef.current = sf; });
 
     const handleClick = async (e: MouseEvent) => {
       // Prevent event from interfering with the recording indicator itself
@@ -34,8 +42,14 @@ export function MacroRecorder() {
       e.preventDefault();
       e.stopPropagation();
 
-      const absX = Math.round(e.clientX + (window.screenX || 0));
-      const absY = Math.round(e.clientY + (window.screenY || 0));
+      // clientX/Y are CSS logical pixels; screenX/Y give the window's logical
+      // origin (non-zero on macOS due to the menu bar offset).
+      const logX = e.clientX + (window.screenX || 0);
+      const logY = e.clientY + (window.screenY || 0);
+      // macOS: Core Graphics already works in logical points → no conversion.
+      // Windows/Linux: enigo SendInput needs physical pixels → multiply by DPI scale.
+      const absX = Math.round(isMac ? logX : logX * scaleRef.current);
+      const absY = Math.round(isMac ? logY : logY * scaleRef.current);
 
       const action: Omit<MacroAction, "id"> = {
         type: "click",
