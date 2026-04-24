@@ -38,23 +38,33 @@ struct PointConfig {
 #[derive(serde::Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum MacroAction {
-    Click       { x: f64, y: f64, delay_after: u64 },
-    RightClick  { x: f64, y: f64, delay_after: u64 },
-    DoubleClick { x: f64, y: f64, delay_after: u64 },
-    Scroll      { x: f64, y: f64, direction: String, amount: i32, delay_after: u64 },
-    Wait        { delay_after: u64 },
-    Key         { key: String, delay_after: u64 },
+    Click        { x: f64, y: f64, delay_after: u64 },
+    RightClick   { x: f64, y: f64, delay_after: u64 },
+    DoubleClick  { x: f64, y: f64, delay_after: u64 },
+    Scroll       { x: f64, y: f64, direction: String, amount: i32, delay_after: u64 },
+    Wait         { delay_after: u64 },
+    Key          { key: String, delay_after: u64 },
+    TypeText     { text: String, delay_after: u64 },
+    HoldLeft     { delay_after: u64 },
+    HoldRight    { delay_after: u64 },
+    ReleaseLeft  { delay_after: u64 },
+    ReleaseRight { delay_after: u64 },
 }
 
 impl MacroAction {
     fn delay_after(&self) -> u64 {
         match self {
-            MacroAction::Click       { delay_after, .. } => *delay_after,
-            MacroAction::RightClick  { delay_after, .. } => *delay_after,
-            MacroAction::DoubleClick { delay_after, .. } => *delay_after,
-            MacroAction::Scroll      { delay_after, .. } => *delay_after,
-            MacroAction::Wait        { delay_after }     => *delay_after,
-            MacroAction::Key         { delay_after, .. } => *delay_after,
+            MacroAction::Click        { delay_after, .. } => *delay_after,
+            MacroAction::RightClick   { delay_after, .. } => *delay_after,
+            MacroAction::DoubleClick  { delay_after, .. } => *delay_after,
+            MacroAction::Scroll       { delay_after, .. } => *delay_after,
+            MacroAction::Wait         { delay_after }     => *delay_after,
+            MacroAction::Key          { delay_after, .. } => *delay_after,
+            MacroAction::TypeText     { delay_after, .. } => *delay_after,
+            MacroAction::HoldLeft     { delay_after }     => *delay_after,
+            MacroAction::HoldRight    { delay_after }     => *delay_after,
+            MacroAction::ReleaseLeft  { delay_after }     => *delay_after,
+            MacroAction::ReleaseRight { delay_after }     => *delay_after,
         }
     }
 }
@@ -170,6 +180,53 @@ fn press_key(key_str: &str) {
         let _ = enigo.key(k, Direction::Click);
     }
 }
+
+// ─── Type text helper (enigo on all platforms) ────────────────────────────────
+
+fn type_text_str(text: &str) {
+    use enigo::{Enigo, Keyboard, Settings};
+    let Ok(mut enigo) = Enigo::new(&Settings::default()) else { return };
+    let _ = enigo.text(text);
+}
+
+// ─── Mouse hold / release helpers ────────────────────────────────────────────
+
+#[cfg(not(target_os = "macos"))]
+fn hold_mouse_left() {
+    use enigo::{Button, Direction, Enigo, Mouse, Settings};
+    let Ok(mut enigo) = Enigo::new(&Settings::default()) else { return };
+    let _ = enigo.button(Button::Left, Direction::Press);
+}
+
+#[cfg(not(target_os = "macos"))]
+fn hold_mouse_right() {
+    use enigo::{Button, Direction, Enigo, Mouse, Settings};
+    let Ok(mut enigo) = Enigo::new(&Settings::default()) else { return };
+    let _ = enigo.button(Button::Right, Direction::Press);
+}
+
+#[cfg(not(target_os = "macos"))]
+fn release_mouse_left() {
+    use enigo::{Button, Direction, Enigo, Mouse, Settings};
+    let Ok(mut enigo) = Enigo::new(&Settings::default()) else { return };
+    let _ = enigo.button(Button::Left, Direction::Release);
+}
+
+#[cfg(not(target_os = "macos"))]
+fn release_mouse_right() {
+    use enigo::{Button, Direction, Enigo, Mouse, Settings};
+    let Ok(mut enigo) = Enigo::new(&Settings::default()) else { return };
+    let _ = enigo.button(Button::Right, Direction::Release);
+}
+
+#[cfg(target_os = "macos")]
+fn hold_mouse_left() {}
+#[cfg(target_os = "macos")]
+fn hold_mouse_right() {}
+#[cfg(target_os = "macos")]
+fn release_mouse_left() {}
+#[cfg(target_os = "macos")]
+fn release_mouse_right() {}
 
 // ─── Existing commands ────────────────────────────────────────────────────────
 
@@ -358,6 +415,21 @@ fn play_macro(
                         }
                         MacroAction::Wait { .. } => {
                             // delay handled below
+                        }
+                        MacroAction::TypeText { text, .. } => {
+                            type_text_str(text);
+                        }
+                        MacroAction::HoldLeft { .. } => {
+                            hold_mouse_left();
+                        }
+                        MacroAction::HoldRight { .. } => {
+                            hold_mouse_right();
+                        }
+                        MacroAction::ReleaseLeft { .. } => {
+                            release_mouse_left();
+                        }
+                        MacroAction::ReleaseRight { .. } => {
+                            release_mouse_right();
                         }
                     }
                 } // lock released
