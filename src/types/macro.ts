@@ -4,22 +4,24 @@ export type MacroActionType =
   | "double_click"
   | "scroll"
   | "wait"
-  | "key";
+  | "key"
+  | "type_text"
+  | "hold_left"
+  | "hold_right"
+  | "release_left"
+  | "release_right";
 
 export type ScrollDirection = "up" | "down" | "left" | "right";
 
 export interface MacroAction {
   id: string;
   type: MacroActionType;
-  // click / right_click / double_click / scroll
   x?: number;
   y?: number;
-  // scroll only
   direction?: ScrollDirection;
   amount?: number;
-  // key only
   key?: string;
-  // ms to wait after this action runs (for "wait" type this IS the duration)
+  text?: string;
   delay_after: number;
 }
 
@@ -27,19 +29,24 @@ export interface SavedMacro {
   id: string;
   name: string;
   actions: MacroAction[];
-  repeat: number;   // -1 = infinite
-  speed: number;    // 1.0 = normal, 2.0 = 2x faster
+  repeat: number;
+  speed: number;
   shortcut: string;
   createdAt: number;
 }
 
 export const ACTION_TYPE_LABELS: Record<MacroActionType, string> = {
-  click: "L-CLICK",
-  right_click: "R-CLICK",
-  double_click: "DBL-CLICK",
-  scroll: "SCROLL",
-  wait: "WAIT",
-  key: "KEY",
+  click:         "L-CLICK",
+  right_click:   "R-CLICK",
+  double_click:  "DBL-CLICK",
+  scroll:        "SCROLL",
+  wait:          "WAIT",
+  key:           "KEY",
+  type_text:     "TYPE TEXT",
+  hold_left:     "HOLD-L",
+  hold_right:    "HOLD-R",
+  release_left:  "REL-L",
+  release_right: "REL-R",
 };
 
 export const SPEED_OPTIONS = [0.25, 0.5, 1.0, 2.0, 5.0];
@@ -57,5 +64,12 @@ export function makeAction(type: MacroActionType): MacroAction {
       return { ...base, type, key: "" };
     case "wait":
       return { ...base, type, delay_after: 500 };
+    case "type_text":
+      return { ...base, type, text: "" };
+    case "hold_left":
+    case "hold_right":
+    case "release_left":
+    case "release_right":
+      return { ...base, type, delay_after: 0 };
   }
 }
