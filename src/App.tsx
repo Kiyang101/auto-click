@@ -3,7 +3,20 @@ import { invoke } from "@tauri-apps/api/core";
 import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { emit } from "@tauri-apps/api/event";
-import { PointOverlay } from "./PointOverlay";
+import {
+  IconPlay,
+  IconStop,
+  IconPlus,
+  IconEye,
+  IconEyeOff,
+  IconClock,
+  IconKeyboard,
+} from "./components/Icons";
+import { TimeSelector } from "./components/TimeSelector";
+import { ShortcutBox } from "./components/ShortcutBox";
+import { PointItem } from "./components/PointItem";
+import { MacroMode } from "./MacroMode";
+import { MacroAction } from "./types/macro";
 import "./App.css";
 import "./Point.css";
 
@@ -15,203 +28,12 @@ interface Point {
   interval: number;
 }
 
-// --- Icons ---
-const IconPlay = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 5v14l11-7z" />
-  </svg>
-);
-const IconStop = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="6" width="12" height="12" rx="2" />
-  </svg>
-);
-const IconPlus = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-const IconEye = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-const IconEyeOff = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-);
-const IconClock = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-const IconKeyboard = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <path d="M6 8h.01" />
-    <path d="M10 8h.01" />
-    <path d="M14 8h.01" />
-    <path d="M18 8h.01" />
-    <path d="M6 12h.01" />
-    <path d="M18 12h.01" />
-    <path d="M10 12h.01" />
-    <path d="M14 12h.01" />
-    <path d="M7 16h10" />
-  </svg>
-);
-const IconTarget = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="3" />
-    <line x1="12" y1="2" x2="12" y2="5" />
-    <line x1="12" y1="19" x2="12" y2="22" />
-    <line x1="2" y1="12" x2="5" y2="12" />
-    <line x1="19" y1="12" x2="22" y2="12" />
-  </svg>
-);
-
-const TimeSelector = ({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: number;
-  onChange: (val: number) => void;
-  disabled?: boolean;
-}) => {
-  const h = Math.floor(value / 3600000);
-  const m = Math.floor((value % 3600000) / 60000);
-  const s = Math.floor((value % 60000) / 1000);
-  const ms = value % 1000;
-
-  const update = (newH: number, newM: number, newS: number, newMs: number) => {
-    const total = newH * 3600000 + newM * 60000 + newS * 1000 + newMs;
-    onChange(Math.max(1, total));
-  };
-
-  return (
-    <div className="time-selector">
-      <div className="time-field">
-        <input
-          type="number"
-          value={h}
-          onChange={(e) => update(parseInt(e.target.value) || 0, m, s, ms)}
-          disabled={disabled}
-          min={0}
-        />
-        <label>HRS</label>
-      </div>
-      <div className="time-field">
-        <input
-          type="number"
-          value={m}
-          onChange={(e) => update(h, parseInt(e.target.value) || 0, s, ms)}
-          disabled={disabled}
-          min={0}
-          max={59}
-        />
-        <label>MIN</label>
-      </div>
-      <div className="time-field">
-        <input
-          type="number"
-          value={s}
-          onChange={(e) => update(h, m, parseInt(e.target.value) || 0, ms)}
-          disabled={disabled}
-          min={0}
-          max={59}
-        />
-        <label>SEC</label>
-      </div>
-      <div className="time-field">
-        <input
-          type="number"
-          value={ms}
-          onChange={(e) => update(h, m, s, parseInt(e.target.value) || 0)}
-          disabled={disabled}
-          min={0}
-          max={999}
-        />
-        <label>MS</label>
-      </div>
-    </div>
-  );
-};
-
 function App() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const pointId = urlParams.get("point");
-
-  if (pointId) {
-    return <PointOverlay id={pointId} />;
-  }
-  //sec = 1000ms min = 60s, 1 min = 1000 * 60 = 60000ms
-  const [mode, setMode] = useState<"single" | "multi">("single");
+  const [mode, setMode] = useState<"single" | "multi" | "macro">("single");
   const [intervalMs, setIntervalMs] = useState<number>(100);
-  // const [isClicking, setIsClicking] = useState<boolean>(false);
 
   const [isClickingSingle, setIsClickingSingle] = useState<boolean>(false);
   const [isClickingMulti, setIsClickingMulti] = useState<boolean>(false);
-
   const isClicking = isClickingSingle || isClickingMulti;
 
   const [hasPermission, setHasPermission] = useState<boolean>(true);
@@ -222,19 +44,47 @@ function App() {
   const [multiShortcut, setMultiShortcut] = useState<string>(
     () => localStorage.getItem("multiShortcut") || "Control+Shift+S",
   );
+  const [macroShortcut, setMacroShortcut] = useState<string>(
+    () => localStorage.getItem("macroShortcut") || "Control+Shift+M",
+  );
 
   const [recordingTarget, setRecordingTarget] = useState<
-    "single" | "multi" | null
+    "single" | "multi" | "macro" | null
   >(null);
 
   const [points, setPoints] = useState<Point[]>([]);
   const [pointsVisible, setPointsVisible] = useState(true);
   const pointListRef = useRef<HTMLDivElement>(null);
 
-  const stateRef = useRef({ isClicking, intervalMs, points });
+  // ── macro state ────────────────────────────────────────────────────────────
+  const [macroActions, setMacroActions] = useState<MacroAction[]>([]);
+  const [macroRepeat, setMacroRepeat] = useState<number>(-1);
+  const [macroSpeed, setMacroSpeed] = useState<number>(1.0);
+  const [isPlayingMacro, setIsPlayingMacro] = useState<boolean>(false);
+
+  // stateRef keeps shortcut handlers in sync with latest state
+  const stateRef = useRef({
+    isClickingSingle,
+    isClickingMulti,
+    intervalMs,
+    points,
+    isPlayingMacro,
+    macroActions,
+    macroRepeat,
+    macroSpeed,
+  });
 
   useEffect(() => {
-    stateRef.current = { isClicking, intervalMs, points };
+    stateRef.current = {
+      isClickingSingle,
+      isClickingMulti,
+      intervalMs,
+      points,
+      isPlayingMacro,
+      macroActions,
+      macroRepeat,
+      macroSpeed,
+    };
     const syncIndices = async () => {
       await emit("update-indices", {
         mapping: points.reduce(
@@ -248,12 +98,22 @@ function App() {
     if (pointListRef.current) {
       pointListRef.current.scrollTop = pointListRef.current.scrollHeight;
     }
-  }, [isClicking, intervalMs, points]);
+  }, [
+    isClickingSingle,
+    isClickingMulti,
+    intervalMs,
+    points,
+    isPlayingMacro,
+    macroActions,
+    macroRepeat,
+    macroSpeed,
+  ]);
 
   useEffect(() => {
     if (isTauri) checkPermission();
   }, []);
 
+  // ── global shortcut registration ───────────────────────────────────────────
   useEffect(() => {
     if (!isTauri) return;
 
@@ -262,20 +122,17 @@ function App() {
         await unregisterAll();
         if (recordingTarget !== null) return;
 
+        // Single
         if (singleShortcut) {
           await register(singleShortcut, async (event) => {
             if (event.state === "Pressed") {
-              const current = stateRef.current;
-              if (current.isClicking) {
+              const cur = stateRef.current;
+              if (cur.isClickingSingle) {
                 await invoke("stop_clicking");
-                // setIsClicking(false);
                 setIsClickingSingle(false);
-              } else {
+              } else if (!cur.isClickingMulti && !cur.isPlayingMacro) {
                 try {
-                  await invoke("start_clicking", {
-                    intervalMs: current.intervalMs,
-                  });
-                  // setIsClicking(true);
+                  await invoke("start_clicking", { intervalMs: cur.intervalMs });
                   setIsClickingSingle(true);
                 } catch (error) {
                   console.error(error);
@@ -286,25 +143,23 @@ function App() {
           localStorage.setItem("singleShortcut", singleShortcut);
         }
 
+        // Multi
         if (multiShortcut && multiShortcut !== singleShortcut) {
           await register(multiShortcut, async (event) => {
             if (event.state === "Pressed") {
-              const current = stateRef.current;
-              if (current.isClicking) {
+              const cur = stateRef.current;
+              if (cur.isClickingMulti) {
                 await invoke("stop_clicking");
-                for (const p of current.points) {
+                for (const p of cur.points) {
                   const win = await WebviewWindow.getByLabel(`point-${p.id}`);
                   if (win) await win.setIgnoreCursorEvents(false);
                 }
-                // setIsClicking(false);
                 setIsClickingMulti(false);
-              } else {
+              } else if (!cur.isClickingSingle && !cur.isPlayingMacro) {
                 try {
                   const pointsConfig = await Promise.all(
-                    current.points.map(async (p) => {
-                      const win = await WebviewWindow.getByLabel(
-                        `point-${p.id}`,
-                      );
+                    cur.points.map(async (p) => {
+                      const win = await WebviewWindow.getByLabel(`point-${p.id}`);
                       if (win) {
                         await win.setIgnoreCursorEvents(true);
                         const pos = await win.innerPosition();
@@ -317,22 +172,14 @@ function App() {
                         const y = isMac
                           ? (pos.y + size.height / 2) / factor
                           : pos.y + size.height / 2;
-                        return {
-                          id: p.id,
-                          x: Math.round(x),
-                          y: Math.round(y),
-                          interval: p.interval,
-                        };
+                        return { id: p.id, x: Math.round(x), y: Math.round(y), interval: p.interval };
                       }
                       return null;
                     }),
                   );
                   const validPoints = pointsConfig.filter((p) => p !== null);
                   if (validPoints.length > 0) {
-                    await invoke("start_multi_clicking", {
-                      points: validPoints,
-                    });
-                    // setIsClicking(true);
+                    await invoke("start_multi_clicking", { points: validPoints });
                     setIsClickingMulti(true);
                   }
                 } catch (error) {
@@ -343,6 +190,39 @@ function App() {
           });
           localStorage.setItem("multiShortcut", multiShortcut);
         }
+
+        // Macro
+        if (
+          macroShortcut &&
+          macroShortcut !== singleShortcut &&
+          macroShortcut !== multiShortcut
+        ) {
+          await register(macroShortcut, async (event) => {
+            if (event.state === "Pressed") {
+              const cur = stateRef.current;
+              if (cur.isPlayingMacro) {
+                await invoke("stop_macro");
+                setIsPlayingMacro(false);
+              } else if (
+                !cur.isClickingSingle &&
+                !cur.isClickingMulti &&
+                cur.macroActions.length > 0
+              ) {
+                try {
+                  await invoke("play_macro", {
+                    actions: cur.macroActions,
+                    repeat: cur.macroRepeat,
+                    speed: cur.macroSpeed,
+                  });
+                  setIsPlayingMacro(true);
+                } catch (error) {
+                  console.error(error);
+                }
+              }
+            }
+          });
+          localStorage.setItem("macroShortcut", macroShortcut);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -352,7 +232,7 @@ function App() {
     return () => {
       if (isTauri) unregisterAll().catch(console.error);
     };
-  }, [singleShortcut, multiShortcut, recordingTarget]);
+  }, [singleShortcut, multiShortcut, macroShortcut, recordingTarget]);
 
   async function checkPermission() {
     try {
@@ -363,75 +243,8 @@ function App() {
     }
   }
 
-  // async function toggleClicking(
-  //   targetMode: "single" | "multi",
-  //   isClicking?: boolean,
-  // ) {
-  //   if (!isTauri) return;
-
-  //   // if (isClicking) {
-  //   //   await invoke("stop_clicking");
-  //   //   for (const p of points) {
-  //   //     const win = await WebviewWindow.getByLabel(`point-${p.id}`);
-  //   //     if (win) await win.setIgnoreCursorEvents(false);
-  //   //   }
-  //   //   setIsClicking(false);
-  //   // } else {
-  //   try {
-  //     if (targetMode === "single") {
-  //       if (isClickingSingle) {
-  //         await invoke("stop_clicking");
-  //         for (const p of points) {
-  //           const win = await WebviewWindow.getByLabel(`point-${p.id}`);
-  //           if (win) await win.setIgnoreCursorEvents(false);
-  //         }
-  //         // setIsClicking(false);
-  //         setIsClickingSingle(false);
-  //       } else {
-  //         await invoke("start_clicking", { intervalMs });
-  //         setIsClickingSingle(true);
-  //       }
-  //     } else {
-  //       const pointsConfig = await Promise.all(
-  //         points.map(async (p) => {
-  //           const win = await WebviewWindow.getByLabel(`point-${p.id}`);
-  //           if (win) {
-  //             await win.setIgnoreCursorEvents(true);
-  //             const pos = await win.innerPosition();
-  //             const size = await win.innerSize();
-  //             const factor = await win.scaleFactor();
-  //             const isMac = navigator.userAgent.includes("Mac");
-  //             const x = isMac
-  //               ? (pos.x + size.width / 2) / factor
-  //               : pos.x + size.width / 2;
-  //             const y = isMac
-  //               ? (pos.y + size.height / 2) / factor
-  //               : pos.y + size.height / 2;
-  //             return {
-  //               id: p.id,
-  //               x: Math.round(x),
-  //               y: Math.round(y),
-  //               interval: p.interval,
-  //             };
-  //           }
-  //           return null;
-  //         }),
-  //       );
-  //       const validPoints = pointsConfig.filter((p) => p !== null);
-  //       if (validPoints.length === 0) return;
-  //       await invoke("start_multi_clicking", { points: validPoints });
-  //       setIsClickingMulti(true);
-  //     }
-  //     // setIsClicking(true);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  //   // }
-  // }
-
   async function startClicking(targetMode: "single" | "multi") {
     if (!isTauri) return;
-
     try {
       if (targetMode === "single") {
         await invoke("start_clicking", { intervalMs });
@@ -452,12 +265,7 @@ function App() {
               const y = isMac
                 ? (pos.y + size.height / 2) / factor
                 : pos.y + size.height / 2;
-              return {
-                id: p.id,
-                x: Math.round(x),
-                y: Math.round(y),
-                interval: p.interval,
-              };
+              return { id: p.id, x: Math.round(x), y: Math.round(y), interval: p.interval };
             }
             return null;
           }),
@@ -467,9 +275,6 @@ function App() {
         await invoke("start_multi_clicking", { points: validPoints });
         setIsClickingMulti(true);
       }
-
-      // Update global state to switch the UI "ON"
-      // setIsClicking(true);
     } catch (error) {
       console.error(error);
     }
@@ -477,25 +282,45 @@ function App() {
 
   async function stopClicking() {
     if (!isTauri) return;
-
     try {
       await invoke("stop_clicking");
-
-      // Reset window events for all points safely
       for (const p of points) {
         const win = await WebviewWindow.getByLabel(`point-${p.id}`);
         if (win) await win.setIgnoreCursorEvents(false);
       }
-
-      // Reset all clicking states to switch the UI "OFF"
       setIsClickingSingle(false);
       setIsClickingMulti(false);
-      // setIsClicking(false);
     } catch (error) {
       console.error(error);
     }
   }
 
+  // ── macro play / stop ──────────────────────────────────────────────────────
+  async function playMacro() {
+    if (!isTauri || macroActions.length === 0) return;
+    try {
+      await invoke("play_macro", {
+        actions: macroActions,
+        repeat: macroRepeat,
+        speed: macroSpeed,
+      });
+      setIsPlayingMacro(true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function stopMacro() {
+    if (!isTauri) return;
+    try {
+      await invoke("stop_macro");
+    } catch (error) {
+      console.error(error);
+    }
+    setIsPlayingMacro(false);
+  }
+
+  // ── multi-point helpers ────────────────────────────────────────────────────
   async function addPoint() {
     if (!isTauri) return;
     const id = Date.now().toString();
@@ -512,9 +337,8 @@ function App() {
       skipTaskbar: true,
       center: true,
     });
-
     webview.once("tauri://created", function () {
-      setPoints([...points, { id, interval: 100 }]);
+      setPoints((prev) => [...prev, { id, interval: 100 }]);
     });
   }
 
@@ -522,7 +346,7 @@ function App() {
     if (!isTauri) return;
     const win = await WebviewWindow.getByLabel(`point-${id}`);
     if (win) await win.close();
-    setPoints(points.filter((p) => p.id !== id));
+    setPoints((prev) => prev.filter((p) => p.id !== id));
   }
 
   async function togglePointsVisibility() {
@@ -538,58 +362,15 @@ function App() {
     setPointsVisible(newVisible);
   }
 
-  const handleShortcutRecord = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    target: "single" | "multi",
-  ) => {
-    e.preventDefault();
-    if (recordingTarget !== target) return;
-
-    const keys: string[] = [];
-    if (e.metaKey) keys.push("Command");
-    if (e.ctrlKey) keys.push("Control");
-    if (e.altKey) keys.push("Alt");
-    if (e.shiftKey) keys.push("Shift");
-
-    const key = e.key;
-    const isModifier = ["Control", "Meta", "Shift", "Alt"].includes(key);
-
-    if (!isModifier) {
-      let keyName = key.toUpperCase();
-      const keyMap: Record<string, string> = {
-        " ": "Space",
-        ARROWUP: "Up",
-        ARROWDOWN: "Down",
-        ARROWLEFT: "Left",
-        ARROWRIGHT: "Right",
-      };
-      if (keyMap[keyName]) keyName = keyMap[keyName];
-
-      keys.push(keyName);
-      const newShortcut = keys.join("+");
-
-      if (target === "single") setSingleShortcut(newShortcut);
-      else setMultiShortcut(newShortcut);
-
-      setRecordingTarget(null);
-    }
-  };
+  const isAnyActive = isClicking || isPlayingMacro;
 
   return (
     <main className="container">
-      <div className="card">
+      <div className={`card${mode === "macro" ? " card--macro" : ""}`}>
         <h1>AUTO CLICKER PRO</h1>
 
         {!hasPermission && isTauri && (
-          <div
-            style={{
-              color: "var(--accent-rose)",
-              marginBottom: "0.5rem",
-              fontSize: "0.7rem",
-              textAlign: "center",
-              fontWeight: 600,
-            }}
-          >
+          <div className="permission-warning">
             ⚠️ Accessibility permission required
           </div>
         )}
@@ -607,12 +388,17 @@ function App() {
           >
             Multiple
           </div>
+          <div
+            className={`tab ${mode === "macro" ? "active" : ""}`}
+            onClick={() => setMode("macro")}
+          >
+            Macro
+          </div>
         </div>
 
-        {mode === "single" ? (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
-          >
+        {/* ── Single ── */}
+        {mode === "single" && (
+          <div className="mode-content">
             <div className="input-group">
               <div className="label-with-icon">
                 <IconClock /> Click Interval
@@ -627,40 +413,23 @@ function App() {
               <div className="label-with-icon">
                 <IconKeyboard /> Start/Stop Shortcut
               </div>
-              <div
-                className={`shortcut-box ${recordingTarget === "single" ? "recording" : ""}`}
-                onClick={() => setRecordingTarget("single")}
-                tabIndex={0}
-                onKeyDown={(e) => handleShortcutRecord(e, "single")}
-                onBlur={() => setRecordingTarget(null)}
-              >
-                {recordingTarget === "single" ? (
-                  <span
-                    style={{
-                      color: "var(--accent-rose)",
-                      fontWeight: 700,
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    RECORDING...
-                  </span>
-                ) : (
-                  <div className="keys">
-                    {singleShortcut
-                      .replace("CommandOrControl", "Ctrl")
-                      .split("+")
-                      .map((key, i) => (
-                        <kbd key={i}>{key}</kbd>
-                      ))}
-                  </div>
-                )}
-              </div>
+              <ShortcutBox
+                shortcut={singleShortcut}
+                isRecording={recordingTarget === "single"}
+                onStartRecording={() => setRecordingTarget("single")}
+                onSetShortcut={(s) => {
+                  setSingleShortcut(s);
+                  setRecordingTarget(null);
+                }}
+                onCancelRecording={() => setRecordingTarget(null)}
+              />
             </div>
           </div>
-        ) : (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
-          >
+        )}
+
+        {/* ── Multiple ── */}
+        {mode === "multi" && (
+          <div className="mode-content">
             <div className="secondary-actions">
               <button
                 className="add-point-btn"
@@ -680,50 +449,24 @@ function App() {
 
             <div className="point-list" ref={pointListRef}>
               {points.length === 0 && (
-                <div
-                  style={{
-                    color: "var(--text-muted)",
-                    fontSize: "0.8rem",
-                    textAlign: "center",
-                    padding: "1rem",
-                  }}
-                >
-                  No targets added.
-                </div>
+                <div className="empty-list-text">No targets added.</div>
               )}
               {points.map((p, index) => (
-                <div
+                <PointItem
                   key={p.id}
-                  className="point-item"
-                  onMouseEnter={() =>
-                    emit("highlight-point", { id: p.id, active: true })
-                  }
-                  onMouseLeave={() =>
-                    emit("highlight-point", { id: p.id, active: false })
-                  }
-                >
-                  <div className="point-item-header">
-                    <span>
-                      <IconTarget /> Target {index + 1}
-                    </span>
-                    <button
-                      className="delete-btn"
-                      onClick={() => removePoint(p.id)}
-                      disabled={isClicking}
-                    >
-                      DELETE
-                    </button>
-                  </div>
-                  <TimeSelector
-                    value={p.interval}
-                    onChange={(newVal) => {
-                      const newPoints = [...points];
-                      newPoints[index].interval = newVal;
-                      setPoints(newPoints);
-                    }}
-                    disabled={isClicking}
-                  />
-                </div>
+                  id={p.id}
+                  index={index}
+                  interval={p.interval}
+                  isClicking={isClicking}
+                  onRemove={removePoint}
+                  onIntervalChange={(newVal) => {
+                    setPoints((prev) =>
+                      prev.map((item, i) =>
+                        i === index ? { ...item, interval: newVal } : item,
+                      ),
+                    );
+                  }}
+                />
               ))}
             </div>
 
@@ -731,53 +474,53 @@ function App() {
               <div className="label-with-icon">
                 <IconKeyboard /> Multi Start/Stop
               </div>
-              <div
-                className={`shortcut-box ${recordingTarget === "multi" ? "recording" : ""}`}
-                onClick={() => setRecordingTarget("multi")}
-                tabIndex={0}
-                onKeyDown={(e) => handleShortcutRecord(e, "multi")}
-                onBlur={() => setRecordingTarget(null)}
-              >
-                {recordingTarget === "multi" ? (
-                  <span
-                    style={{
-                      color: "var(--accent-rose)",
-                      fontWeight: 700,
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    RECORDING...
-                  </span>
-                ) : (
-                  <div className="keys">
-                    {multiShortcut
-                      .replace("CommandOrControl", "Ctrl")
-                      .split("+")
-                      .map((key, i) => (
-                        <kbd key={i}>{key}</kbd>
-                      ))}
-                  </div>
-                )}
-              </div>
+              <ShortcutBox
+                shortcut={multiShortcut}
+                isRecording={recordingTarget === "multi"}
+                onStartRecording={() => setRecordingTarget("multi")}
+                onSetShortcut={(s) => {
+                  setMultiShortcut(s);
+                  setRecordingTarget(null);
+                }}
+                onCancelRecording={() => setRecordingTarget(null)}
+              />
             </div>
           </div>
         )}
 
-        {mode === "single" ? (
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              justifyContent: "space-between",
+        {/* ── Macro ── */}
+        {mode === "macro" && (
+          <MacroMode
+            actions={macroActions}
+            setActions={setMacroActions}
+            repeat={macroRepeat}
+            setRepeat={setMacroRepeat}
+            speed={macroSpeed}
+            setSpeed={setMacroSpeed}
+            shortcut={macroShortcut}
+            isRecordingShortcut={recordingTarget === "macro"}
+            onStartRecordingShortcut={() => setRecordingTarget("macro")}
+            onSetShortcut={(s) => {
+              setMacroShortcut(s);
+              setRecordingTarget(null);
             }}
-          >
+            onCancelRecordingShortcut={() => setRecordingTarget(null)}
+            isPlaying={isPlayingMacro}
+            onPlay={playMacro}
+            onStop={stopMacro}
+          />
+        )}
+
+        {/* ── action buttons: single / multi only ── */}
+        {mode !== "macro" && (
+          <div className="action-buttons">
             <button
-              onClick={() => startClicking(mode)}
-              disabled={isClickingSingle}
+              onClick={() => startClicking(mode as "single" | "multi")}
+              disabled={mode === "single" ? isClickingSingle : isClickingMulti}
               className="action-button"
               style={{
-                opacity: isClickingSingle ? 0.5 : 1,
-                cursor: isClickingSingle ? "not-allowed" : "pointer",
+                opacity: (mode === "single" ? isClickingSingle : isClickingMulti) ? 0.5 : 1,
+                cursor: (mode === "single" ? isClickingSingle : isClickingMulti) ? "not-allowed" : "pointer",
               }}
             >
               <IconPlay /> START {mode.toUpperCase()}
@@ -785,43 +528,11 @@ function App() {
 
             <button
               onClick={stopClicking}
-              disabled={!isClickingSingle}
+              disabled={mode === "single" ? !isClickingSingle : !isClickingMulti}
               className="action-button stop"
               style={{
-                opacity: !isClickingSingle ? 0.5 : 1,
-                cursor: !isClickingSingle ? "not-allowed" : "pointer",
-              }}
-            >
-              <IconStop /> STOP CLICKING
-            </button>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              justifyContent: "space-between",
-            }}
-          >
-            <button
-              onClick={() => startClicking(mode)}
-              disabled={isClickingMulti}
-              className="action-button"
-              style={{
-                opacity: isClickingMulti ? 0.5 : 1,
-                cursor: isClickingMulti ? "not-allowed" : "pointer",
-              }}
-            >
-              <IconPlay /> START {mode.toUpperCase()}
-            </button>
-
-            <button
-              onClick={() => stopClicking()}
-              disabled={!isClickingMulti}
-              className="action-button stop"
-              style={{
-                opacity: !isClickingMulti ? 0.5 : 1,
-                cursor: !isClickingMulti ? "not-allowed" : "pointer",
+                opacity: (mode === "single" ? !isClickingSingle : !isClickingMulti) ? 0.5 : 1,
+                cursor: (mode === "single" ? !isClickingSingle : !isClickingMulti) ? "not-allowed" : "pointer",
               }}
             >
               <IconStop /> STOP CLICKING
@@ -830,8 +541,14 @@ function App() {
         )}
 
         <div className="status-bar">
-          <div className={`indicator ${isClicking ? "active" : ""}`}></div>
-          <span>{isClicking ? "SYSTEM ACTIVE" : "SYSTEM IDLE"}</span>
+          <div className={`indicator ${isAnyActive ? "active" : ""}`} />
+          <span>
+            {isPlayingMacro
+              ? "MACRO ACTIVE"
+              : isClicking
+              ? "SYSTEM ACTIVE"
+              : "SYSTEM IDLE"}
+          </span>
         </div>
       </div>
     </main>
