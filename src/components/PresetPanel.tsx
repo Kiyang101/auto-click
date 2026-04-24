@@ -32,12 +32,27 @@ export interface PresetPanelProps {
   onPlay: () => void;
 }
 
+function validatePresets(data: unknown): SavedMacro[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter(
+    (item): item is SavedMacro =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof (item as Record<string, unknown>).id === "string" &&
+      typeof (item as Record<string, unknown>).name === "string" &&
+      Array.isArray((item as Record<string, unknown>).actions),
+  );
+}
+
 export function PresetPanel({
   actions, repeat, speed, shortcut, isPlaying, onLoad, onPlay,
 }: PresetPanelProps) {
   const [presets, setPresets] = useState<SavedMacro[]>(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-    catch { return []; }
+    try {
+      return validatePresets(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
+    } catch {
+      return [];
+    }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("New Macro");
