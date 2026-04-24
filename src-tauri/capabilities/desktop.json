@@ -9,6 +9,8 @@
     "*"
   ],
   "permissions": [
+    "core:event:allow-emit",
+    "core:event:allow-listen",
     "core:window:allow-create",
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-size",
